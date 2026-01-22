@@ -1,0 +1,76 @@
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile 
+    container_name: frontend
+    restart: always
+    ports:
+      - "4000:4000"
+    depends_on:
+      - database
+    environment:
+      NEXT_PUBLIC_FRONTEND_URL: ${NEXT_PUBLIC_FRONTEND_URL}
+      NEXT_PUBLIC_PORT: ${NEXT_PUBLIC_PORT}
+      NEXT_PUBLIC_BACKEND_URL_MAIN_API: ${NEXT_PUBLIC_BACKEND_URL_MAIN_API}
+      NEXT_PUBLIC_BACKEND_PORT_MAIN_API: ${NEXT_PUBLIC_BACKEND_PORT_MAIN_API}
+      PORT: ${PORT}
+    networks:
+      - portfolio
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+      - /frontend/.next
+  backend_main_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
+    container_name: backend_main_api
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+    environment:
+      PORT: ${PORT}
+      BACKEND_GC_TITLE: ${BACKEND_GC_TITLE}
+      BACKEND_GC_DESCRIPTION: ${BACKEND_GC_DESCRIPTION}
+      BACKEND_GC_API_PREFIX: ${BACKEND_GC_API_PREFIX}
+      BACKEND_GC_HOST: ${BACKEND_GC_HOST}
+      BACKEND_GC_PORT: ${BACKEND_GC_PORT}
+      BACKEND_GC_OPENAPI_PREFIX: ${BACKEND_GC_OPENAPI_PREFIX}
+      BACKEND_SECURITY_SECRET_KEY: ${BACKEND_SECURITY_SECRET_KEY}
+      BACKEND_SECURITY_ALGORITHM: ${BACKEND_SECURITY_ALGORITHM}
+      BACKEND_APP_ENVIRONMENT: ${BACKEND_APP_ENVIRONMENT}
+      BACKEND_DB_PSQL_HOST: ${BACKEND_DB_PSQL_HOST}
+      BACKEND_DB_PSQL_NAME: ${BACKEND_DB_PSQL_NAME}
+      BACKEND_DB_PSQL_PASSWORD: ${BACKEND_DB_PSQL_PASSWORD}
+      BACKEND_DB_PSQL_PORT: ${BACKEND_DB_PSQL_PORT}
+      BACKEND_DB_PSQL_USER: ${BACKEND_DB_PSQL_USER}
+      BACKEND_FRONTEND_URL: ${BACKEND_FRONTEND_URL}
+    networks:
+      - portfolio
+    volumes:
+      - ./backend/app:/backend/app
+  
+  database:
+    image: postgres:15
+    container_name: database
+    restart: always
+    environment:
+      POSTGRES_USER: ${BACKEND_DB_PSQL_USER}
+      POSTGRES_PASSWORD: ${BACKEND_DB_PSQL_PASSWORD}
+      POSTGRES_DB: ${BACKEND_DB_PSQL_NAME}
+    networks:
+      - portfolio
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+networks:
+  portfolio:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

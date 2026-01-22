@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "backend_jhuerta_portfolio"
+version = "0.1.0"
+description = "Backend of the Jose Huerta's Portfolio"
+authors = ["JOSE HUERTA <jlhuerta@uc.cl>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+bcrypt = "4.0.1"
+cryptography = "^45.0.7"
+fastapi = "^0.116.1"
+psycopg2-binary = "^2.9.10"
+pymysql = "^1.1.2"
+python-jose = "^3.5.0"
+python-multipart = "^0.0.20"
+sqlalchemy = "^2.0.43"
+uvicorn = "^0.35.0"
+passlib = "^1.7.4"
+aiofiles = "^24.1.0"
+pydantic = "^2"
+python-dotenv = "^1.1.1"
+pydantic-settings = "^2.10.1"
+alembic = "^1.16.5"
+asyncpg = "^0.30.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+httpx = "^0.28.0"
+pytest-asyncio = "^0.23.8"
+alembic = "^1.16.5"
+black = "^25.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "run:__main__"
