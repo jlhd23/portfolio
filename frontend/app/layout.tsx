@@ -17,8 +17,8 @@ const defaultUrl: string =
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Urban AI Lab UC",
-  description: "Web page for the Urban AI Lab at Pontificia Universidad Católica de Chile",
+  title: "José Huerta's Portfolio",
+  description: "Web page for José Huerta's Portfolio",
 };
 
 const geistSans = Geist({ variable: "--font-geist-sans", display: "swap", subsets: ["latin"],});
