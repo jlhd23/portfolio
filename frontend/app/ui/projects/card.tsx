@@ -22,8 +22,8 @@ export default function ProjectCard({
 					<div className="w-3 h-3 rounded-full bg-slate-700" />
 					<div className="w-3 h-3 rounded-full bg-slate-700" />
 				</div>
-				{finished ? <span className="text-[10px] font-mono text-blue-500/50 uppercase tracking-tighter">project_id: {projectId}</span> :
-					<span className="text-[10px] font-mono text-slate-600 uppercase">status: under_construction</span>}
+				{finished ? <span className="text-[10px] font-mono text-white-500/50 uppercase tracking-tighter">project_id: {projectId}</span> :
+					<span className="text-[10px] font-mono text-white-slate-600 uppercase">status: under_construction</span>}
 			</div>
 
 			<div className="p-6">

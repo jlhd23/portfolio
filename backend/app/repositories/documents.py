@@ -3,14 +3,14 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from app.models.document_chunk import DocumentChunk
+from app.models.document_chunks import DocumentChunk
 
 
-class DocumentRepository:
+class DocumentsRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def pdf_exists(self, pdf_name: str) -> bool:
+    async def document_exists(self, pdf_name: str) -> bool:
         """
         Check if a PDF has already been indexed.
         """
@@ -19,9 +19,10 @@ class DocumentRepository:
             .where(DocumentChunk.pdf_name == pdf_name)
             .limit(1)
         )
-        return self.db.execute(stmt).first() is not None
+        result = await self.db.execute(stmt) 
+        return result.first() is not None
 
-    def bulk_create_chunks(
+    async def bulk_create_chunks(
         self,
         pdf_name: str,
         topic: Optional[str],
@@ -36,16 +37,16 @@ class DocumentRepository:
                 pdf_name=pdf_name,
                 topic=topic,
                 chunk_index=idx,
-                content=content,
+                chunk_text=content,
                 embedding=embedding,
             )
             for idx, (content, embedding) in enumerate(zip(chunks, embeddings))
         ]
 
         self.db.add_all(objects)
-        self.db.commit()
+        await self.db.commit()
 
-    def get_chunks_by_pdf_name(
+    async def get_chunks_by_pdf_name(
         self,
         pdf_name: str,
     ) -> List[DocumentChunk]:
@@ -57,9 +58,10 @@ class DocumentRepository:
             .where(DocumentChunk.pdf_name == pdf_name)
             .order_by(DocumentChunk.chunk_index)
         )
-        return self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
-    def get_chunks_by_topic(
+    async def get_chunks_by_topic(
         self,
         topic: str,
     ) -> List[DocumentChunk]:
@@ -67,9 +69,10 @@ class DocumentRepository:
         Retrieve all chunks matching a topic.
         """
         stmt = select(DocumentChunk).where(DocumentChunk.topic == topic)
-        return self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
-    def semantic_search(
+    async def semantic_search(
         self,
         query_embedding: List[float],
         limit: int = 5,
@@ -92,4 +95,5 @@ class DocumentRepository:
         if topic:
             stmt = stmt.where(DocumentChunk.topic == topic)
 
-        return self.db.execute(stmt).scalars().all()
+        result = await self.db.execute(stmt)
+        return result.scalars().all()

@@ -10,6 +10,7 @@ import {
 	CardDescription,
 	CardContent,
 } from "@/app/ui/components/card";
+import Image from "next/image";
 import { Button } from "@/app/ui/components/button";
 import { Input } from "@/app/ui/components/input";
 import { Label } from "@/app/ui/components/label";
@@ -36,6 +37,8 @@ export default function RagCard({
 	const [document, setDocument] = useState<File | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [response, setResponse] = useState<any | null>(null);
+	const logoSrc = "/projects/rag_diagram.png";
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -47,23 +50,21 @@ export default function RagCard({
     }
 
     const formData = new FormData();
-    formData.append("gemini_api_key", apiKey);
+	formData.append("gemini_api_key", apiKey);
 	formData.append("tavily_api_key", tavilyApiKey);
-    formData.append("topic", topic);
-    formData.append("query", query);
-    formData.append("document", document);
+	formData.append("documents_topic", topic);
+	formData.append("question", query);
+	formData.append("pdf", document);
+
+	const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60_000);
 
     try {
 		setLoading(true);
-		console.log(formData.get("document"));
-		console.log(formData.get("topic"));
-		console.log(formData.get("query"));
-		console.log(formData.get("gemini_api_key"));
-		console.log(formData.get("tavily_api_key"));
-		console.log(`${BACKEND_URL_MAIN_API}/rag`)
 		const res = await fetch(`${BACKEND_URL_MAIN_API}/rag/query`, {
 			method: "POST",
 			body: formData,
+			signal: controller.signal,
 		});
 		console.log(res);
 		if (!res.ok) {
@@ -71,10 +72,15 @@ export default function RagCard({
 		}
 
 		const data = await res.json();
-		console.log("RAG response:", data);
+		setResponse(data);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unexpected error");
+			if (err instanceof DOMException && err.name === "AbortError") {
+				setError("The request took too long (timeout after 60s)");
+			} else {
+				setError(err instanceof Error ? err.message : "Unexpected error");
+			}
 		} finally {
+			clearTimeout(timeoutId);
 			setLoading(false);
 		}
 	}
@@ -89,8 +95,21 @@ export default function RagCard({
 				relevant_topics={relevant_topics}
 			/>
 
+			<div className="flex justify-center mb-10">
+				<div className="relative group">
+				<div className="absolute -inset-1 bg-blue-500/20 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+				<Image 
+					src={logoSrc} 
+					alt="Lab Logo" 
+					width={400} 
+					height={160} 
+					className="relative rounded-lg object-contain brightness-90 contrast-125"
+				/>
+				</div>
+			</div>
+
 			{/* <div className="p-6"> */}
-				<Card>
+				<Card >
 				<CardHeader>
 					<CardTitle className="font-mono text-blue-400 text-sm">
 					&gt; RAG Interface
@@ -122,12 +141,12 @@ export default function RagCard({
 							type="password"
 							value={tavilyApiKey}
 							onChange={(e) => setTavilyApiKey(e.target.value)}
-							placeholder="Only needed for web search"
+							placeholder=""
 						/>
 						</div>
 
 						<div className="grid gap-2">
-						<Label htmlFor="topic">Topic</Label>
+						<Label htmlFor="topic">Document topic</Label>
 						<Input
 							id="topic"
 							type="text"
@@ -168,6 +187,23 @@ export default function RagCard({
 						<Button type="submit" disabled={loading}>
 							{loading ? "Running RAG..." : "Run RAG"}
 						</Button>
+
+						{response && (
+							<div className="mt-6 rounded-lg border border-blue-500/20 bg-slate-900 p-4">
+							<p className="mb-2 text-xs font-mono text-blue-400">
+								&gt; RAG Response
+							</p>
+							<p className="mb-2 text-gray-400 leading-relaxed font-sans text-justify">
+								<strong>Topic: </strong>{response.topic}
+							</p>
+							<p className="mb-2 text-gray-400 leading-relaxed font-sans text-justify">
+								<strong>Source: </strong>{response.source}
+							</p>
+							<p className="mb-2 text-gray-400 leading-relaxed font-sans text-justify">
+								<strong>Answer: </strong>{response.answer}
+							</p>
+							</div>
+						)}
 					</div>
 					</form>
 				</CardContent>

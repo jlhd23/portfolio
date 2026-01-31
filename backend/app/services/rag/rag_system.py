@@ -1,15 +1,15 @@
 from typing import List, TypedDict
+from unittest import result
 from app.schemas.rag import RouteQuery, GradeDocuments, GradeAnswer
-
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain.schema import Document
-
+from langchain_core.documents import Document
+from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langgraph.graph import StateGraph, START, END
 
 from langchain_google_genai import (
-    ChatGoogleGenerativeAI,
-    GoogleGenerativeAIEmbeddings,
+    ChatGoogleGenerativeAI
 )
 
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -35,20 +35,18 @@ class RAGAgent:
         self.repo = documents_repo
 
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash-lite",
             temperature=0,
             google_api_key=gemini_api_key,
         )
 
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
-            google_api_key=gemini_api_key,
-        )
+        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
+        search_wrapper = TavilySearchAPIWrapper(tavily_api_key=tavily_api_key)
 
         self.web_search_tool = TavilySearchResults(
-            k=3,
-            api_key=tavily_api_key,
+            api_wrapper=search_wrapper,
+            k=3
         )
 
         self.router_llm = self.llm.with_structured_output(RouteQuery)
@@ -63,8 +61,8 @@ class RAGAgent:
                 (
                     "system",
                     "Decide whether the question should be answered using "
-                    "internal documents or requires a web search. The topic of the"
-					"document is '{self.documents_topic}'. "
+                    "internal documents or requires a web search. The topic of the "
+                    "document is '{topic}'. "
                     "Answer with 'vectorstore' or 'web_search'.",
                 ),
                 ("human", "{question}"),
@@ -72,34 +70,30 @@ class RAGAgent:
         )
 
         result = self.router_llm.invoke(
-            prompt.format_messages(question=state["question"])
+            prompt.format_messages(
+                question=state["question"], 
+                topic=self.documents_topic
+            )
         )
 
         return result.datasource
     
-    def _retrieve(self, state: RAGState) -> dict:
+    async def _retrieve(self, state: RAGState) -> dict:
         query_embedding = self.embeddings.embed_query(state["question"])
-
-        chunks = self.repo.similarity_search(
+        chunks = await self.repo.semantic_search(
             query_embedding=query_embedding,
-            k=5,
+            limit=5, 
+            topic=self.documents_topic
         )
 
         docs = [
             Document(
-                page_content=c.content,
-                metadata={
-                    "pdf_name": c.pdf_name,
-                    "topic": c.topic,
-                },
+                page_content=c.chunk_text,
+                metadata={"pdf_name": c.pdf_name, "topic": c.topic},
             )
             for c in chunks
         ]
-
-        return {
-            "retrieved_docs": docs,
-            "question": state["question"],
-        }
+        return {"retrieved_docs": docs, "question": state["question"]}
     
     def _web_search(self, state: RAGState) -> dict:
         results = self.web_search_tool.invoke(
@@ -152,7 +146,7 @@ class RAGAgent:
             "retrieved_docs": filtered_docs,
             "question": state["question"],
         }
-    def _generate(self, state: RAGState) -> dict:
+    async def _generate(self, state: RAGState) -> dict:
         context = "\n\n".join(
             doc.page_content for doc in state["retrieved_docs"]
         )
@@ -240,7 +234,6 @@ class RAGAgent:
         graph.add_node("grade_answer", self._grade_answer)
         graph.add_node("rewrite_question", self._rewrite_question)
 
-        # START → ROUTER
         graph.add_conditional_edges(
             START,
             self._route_question,
@@ -269,3 +262,18 @@ class RAGAgent:
         graph.add_edge("rewrite_question", "retrieve")
 
         return graph.compile()
+    
+    def save_graph(self, filename: str = "graph_workflow.png"):
+        """
+        Genera y guarda una imagen del flujo de trabajo del grafo.
+        """
+        try:
+            graph_png = self.graph.get_graph().draw_mermaid_png()
+            
+            with open(filename, "wb") as f:
+                f.write(graph_png)
+            
+            print(f"✔ Grafo exportado exitosamente como: {filename}")
+        except Exception as e:
+            print(f"⚠ Error al generar la imagen: {e}")
+            print("Asegúrate de tener instaladas las dependencias: pip install pygraphviz o pydot")

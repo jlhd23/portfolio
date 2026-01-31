@@ -4,9 +4,8 @@ import Image from "next/image";
 import { useState } from "react";
 
 const images = [
-  "/carousel/c1.png",
-  "/carousel/c2.png",
-  "/carousel/c3.png"
+  "/carousel/rag_project.png",
+  "/carousel/c2.png"
 ];
 
 export default function CarouselLanding() {

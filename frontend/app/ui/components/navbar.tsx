@@ -17,14 +17,14 @@ export default function Navbar() {
 
             <div className="flex gap-5 items-center font-semibold">
                 <Link href="/">
-                    <Image src="/logos/logo_lab.png" width={60} height={18} 
+                    <Image src="/logos/logo_lab.png" width={60} height={18} style={{ height: 'auto' }}
                         className="hidden md:block dark:hidden rounded-md" alt="jlhd23's Lab Logo"
                     />
                 </Link>
 
             
                 <Link href="/">
-                    <Image src="/logos/logo_lab.png" width={60} height={18} 
+                    <Image src="/logos/logo_lab.png" width={60} height={18} style={{ height: 'auto' }}
                         className="hidden md:hidden dark:md:block rounded-md" alt="jlhd23's Lab Logo"
                     />
                 </Link>
