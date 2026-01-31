@@ -1,26 +1,34 @@
-import sys
-import os
 import asyncio
+import os
+import sys
 from logging.config import fileConfig
+
 from alembic import context
 from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+# --- Asegurar que el proyecto se encuentre en el path ---
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, project_root)
 
 from app.core.config import settings
-from app.databases.postgresql.db import Base
-from app.databases.postgresql.models.user import User  # importa tus modelos aquí
+from app.models.base import Base
 
+# --- Configuración base de Alembic ---
 config = context.config
 
-config.set_main_option("sqlalchemy.url", settings.database_postgresql_url)
+# La URL ya viene correctamente formateada desde settings
+db_url = settings.database_postgresql_url
+# print(
+#     f"[ALEMBIC] Using database URL: {db_url.split('@')[0]}@***"
+# )  # Mostrar sin password
+config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
 
 def run_migrations_offline() -> None:
     """Ejecuta las migraciones en modo 'offline' (sin conexión a la DB)."""
@@ -36,9 +44,9 @@ def run_migrations_offline() -> None:
 
 
 async def run_migrations_online_async() -> None:
-    """Ejecuta las migraciones en modo 'online' con AsyncEngine."""
+    """Ejecuta las migraciones con conexión asíncrona."""
     connectable: AsyncEngine = create_async_engine(
-        settings.database_postgresql_url,
+        db_url,
         poolclass=pool.NullPool,
     )
 

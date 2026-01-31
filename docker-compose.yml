@@ -13,7 +13,7 @@ services:
     environment:
       NEXT_PUBLIC_FRONTEND_URL: ${NEXT_PUBLIC_FRONTEND_URL}
       NEXT_PUBLIC_PORT: ${NEXT_PUBLIC_PORT}
-      NEXT_PUBLIC_BACKEND_URL_MAIN_API: ${NEXT_PUBLIC_BACKEND_URL_MAIN_API}
+      NEXT_PUBLIC_BACKEND_HOST_MAIN_API: ${NEXT_PUBLIC_BACKEND_HOST_MAIN_API}
       NEXT_PUBLIC_BACKEND_PORT_MAIN_API: ${NEXT_PUBLIC_BACKEND_PORT_MAIN_API}
       PORT: ${PORT}
     networks:
@@ -55,7 +55,7 @@ services:
       - ./backend/app:/backend/app
   
   database:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
     container_name: database
     restart: always
     environment:
@@ -65,12 +65,12 @@ services:
     networks:
       - portfolio
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
 
 networks:
   portfolio:
     driver: bridge
 
 volumes:
-  postgres_data:
+  pgdata:
     driver: local

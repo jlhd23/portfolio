@@ -10,8 +10,8 @@ export default function Footer() {
             </p>
 
             <div className="flex items-center gap-4 mt-2 md:mt-0">
-                <Image src="/logos/logo_white_background.png" width={60} height={24} className="hidden md:block dark:hidden rounded-md" alt="logo white background"/>
-                <Image src="/logos/logo_black_background.png" width={60}height={24} className="hidden md:hidden dark:md:block rounded-md" alt="logo black background"/>
+                <Image src="/logos/logo_white_background.png" width={60} height={24} style={{ height: 'auto' }} className="hidden md:block dark:hidden rounded-md" alt="logo white background"/>
+                <Image src="/logos/logo_black_background.png" width={60}height={24} style={{ height: 'auto' }} className="hidden md:hidden dark:md:block rounded-md" alt="logo black background"/>
             </div>
         </footer>
     );

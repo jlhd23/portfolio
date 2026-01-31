@@ -1,6 +1,6 @@
 from fastapi import APIRouter  
-from app.api.routes.users.users import router as users_router
+from app.api.routes.rag_system import router as rag_router
 
 router = APIRouter()  
 
-router.include_router(users_router, prefix = "/users")
+router.include_router(rag_router)
