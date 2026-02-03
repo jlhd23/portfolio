@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import Navbar from "@/app/ui/components/navbar";
 import Footer from "@/app/ui/components/footer";
+import { AuthProvider } from "@/app/context/AuthContext";
 import "./globals.css";
 
 const FRONTEND_URL_ENV: string = process.env.NEXT_PUBLIC_FRONTEND_URL || "";
@@ -31,11 +32,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <Navbar/>
-          {children}
-          <Footer/>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+            <Navbar/>
+            {children}
+            <Footer/>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
