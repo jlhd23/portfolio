@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const images = [
   "/carousel/rag_project.png",
-  "/carousel/c2.png",
+  "/carousel/voice_agent_project.png",
   "/carousel/about_page.png"
 ];
 

@@ -1,6 +1,6 @@
 from typing import List, TypedDict
 from unittest import result
-from app.schemas.rag import RouteQuery, GradeDocuments, GradeAnswer
+from app.schemas.voice_agent import RouteQuery, GradeDocuments
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -17,13 +17,13 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from app.repositories.documents import DocumentsRepository
 
 
-class RAGState(TypedDict):
+class AgentState(TypedDict):
     question: str
     retrieved_docs: List[Document]
     answer: str
     
 
-class RAGAgent:
+class TextAgent:
     def __init__(
         self,
         documents_topic: str,
@@ -51,11 +51,10 @@ class RAGAgent:
 
         self.router_llm = self.llm.with_structured_output(RouteQuery)
         self.doc_grader = self.llm.with_structured_output(GradeDocuments)
-        self.answer_grader = self.llm.with_structured_output(GradeAnswer)
 
         self.graph = self._build_graph()
         
-    def _route_question(self, state: RAGState) -> str:
+    def _route_question(self, state: AgentState) -> str:
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
@@ -78,7 +77,7 @@ class RAGAgent:
 
         return result.datasource
     
-    async def _retrieve(self, state: RAGState) -> dict:
+    async def _retrieve(self, state: AgentState) -> dict:
         query_embedding = self.embeddings.embed_query(state["question"])
         chunks = await self.repo.semantic_search(
             query_embedding=query_embedding,
@@ -95,7 +94,7 @@ class RAGAgent:
         ]
         return {"retrieved_docs": docs, "question": state["question"]}
     
-    def _web_search(self, state: RAGState) -> dict:
+    def _web_search(self, state: AgentState) -> dict:
         results = self.web_search_tool.invoke(
             {"query": state["question"]}
         )
@@ -114,7 +113,7 @@ class RAGAgent:
             "question": state["question"],
         }
     
-    def _grade_documents(self, state: RAGState) -> dict:
+    def _grade_documents(self, state: AgentState) -> dict:
         filtered_docs = []
 
         prompt = ChatPromptTemplate.from_messages(
@@ -146,7 +145,7 @@ class RAGAgent:
             "retrieved_docs": filtered_docs,
             "question": state["question"],
         }
-    async def _generate(self, state: RAGState) -> dict:
+    async def _generate(self, state: AgentState) -> dict:
         context = "\n\n".join(
             doc.page_content for doc in state["retrieved_docs"]
         )
@@ -180,60 +179,21 @@ class RAGAgent:
             "retrieved_docs": state["retrieved_docs"],
             "question": state["question"],
         }
-    def _grade_answer(self, state: RAGState) -> dict:
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "Determine whether the answer addresses the question. "
-                    "Answer 'yes' or 'no'.",
-                ),
-                (
-                    "human",
-                    "Question:\n{question}\n\nAnswer:\n{answer}",
-                ),
-            ]
-        )
-
-        result = self.answer_grader.invoke(
-            prompt.format_messages(
-                question=state["question"],
-                answer=state["answer"],
-            )
-        )
-
-        return {
-            "answer_valid": result.binary_score.lower() == "yes"
-        }
-    def _rewrite_question(self, state: RAGState) -> dict:
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "Rewrite the question to improve document retrieval.",
-                ),
-                ("human", "{question}"),
-            ]
-        )
-
-        new_question = (
-            prompt | self.llm | StrOutputParser()
-        ).invoke({"question": state["question"]})
-
-        return {"question": new_question}
     
-    def _should_retry(self, state: dict) -> str:
-        return "rewrite_question" if not state["answer_valid"] else END
-    
+
+    def _check_documents(self, state: AgentState) -> str:
+        """
+        Checks if there are any documents left after filtering.
+        """
+        return "yes" if state["retrieved_docs"] else "no"
+
     def _build_graph(self):
-        graph = StateGraph(RAGState)
+        graph = StateGraph(AgentState)
 
         graph.add_node("retrieve", self._retrieve)
         graph.add_node("web_search", self._web_search)
         graph.add_node("grade_documents", self._grade_documents)
         graph.add_node("generate", self._generate)
-        graph.add_node("grade_answer", self._grade_answer)
-        graph.add_node("rewrite_question", self._rewrite_question)
 
         graph.add_conditional_edges(
             START,
@@ -245,36 +205,17 @@ class RAGAgent:
         )
 
         graph.add_edge("retrieve", "grade_documents")
-        graph.add_edge("grade_documents", "generate")
-
-        graph.add_edge("web_search", "generate")
-
-        graph.add_edge("generate", "grade_answer")
-
+        
         graph.add_conditional_edges(
-            "grade_answer",
-            self._should_retry,
+            "grade_documents",
+            self._check_documents,
             {
-                "rewrite_question": "rewrite_question",
-                END: END,
+                "yes": "generate",
+                "no": "web_search",
             },
         )
 
-        graph.add_edge("rewrite_question", "retrieve")
+        graph.add_edge("web_search", "generate")
+        graph.add_edge("generate", END)
 
         return graph.compile()
-    
-    def save_graph(self, filename: str = "graph_workflow.png"):
-        """
-        Genera y guarda una imagen del flujo de trabajo del grafo.
-        """
-        try:
-            graph_png = self.graph.get_graph().draw_mermaid_png()
-            
-            with open(filename, "wb") as f:
-                f.write(graph_png)
-            
-            print(f"✔ Grafo exportado exitosamente como: {filename}")
-        except Exception as e:
-            print(f"⚠ Error al generar la imagen: {e}")
-            print("Asegúrate de tener instaladas las dependencias: pip install pygraphviz o pydot")

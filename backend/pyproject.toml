@@ -35,6 +35,8 @@ sentence-transformers = "^5.2.0"
 langchain-huggingface = "^1.2.0"
 pydot = "^4.0.1"
 pillow = "^12.1.0"
+groq = "^1.0.0"
+tavily-python = "^0.7.21"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

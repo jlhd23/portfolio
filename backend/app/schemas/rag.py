@@ -12,12 +12,12 @@ class RouteQuery(BaseModel):
         description="Route question to vectorstore or web search"
     )
 
-class RAGQueryRequest(BaseModel):
-    question: str
-    document_name: Optional[str] = None
+# class RAGQueryRequest(BaseModel):
+#     question: str
+#     document_name: Optional[str] = None
 
 
-class RAGQueryResponse(BaseModel):
-    answer: str
-    used_web_search: bool
-    retrieved_chunks: List[str]
+# class RAGQueryResponse(BaseModel):
+#     answer: str
+#     used_web_search: bool
+#     retrieved_chunks: List[str]

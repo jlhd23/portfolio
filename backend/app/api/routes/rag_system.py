@@ -76,4 +76,3 @@ async def rag_query(
         "source": source_display,
         "topic": documents_topic
     }
-    return {"answer": result.get("answer")}
