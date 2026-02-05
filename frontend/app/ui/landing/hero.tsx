@@ -67,10 +67,7 @@ export function Hero() {
 						<li className="flex items-start gap-3 text-sm">
 							<span className="text-blue-500 font-bold">→</span>
 							<span>
-							OpenStreetMap POI visualizer 
-							<span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase font-mono">
-								Work in progress
-							</span>
+							Voice Agent (using LangGraph, Whispr and Gemini) 
 							</span>
 						</li>
 						</ul>

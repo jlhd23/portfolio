@@ -97,3 +97,11 @@ class DocumentsRepository:
 
         result = await self.db.execute(stmt)
         return result.scalars().all()
+
+    async def get_all_chunks(self) -> List[DocumentChunk]:
+        """
+        Retrieve all document chunks from the database.
+        """
+        stmt = select(DocumentChunk)
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
